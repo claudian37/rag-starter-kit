@@ -1,0 +1,25 @@
+app.py
+  21544d8bf6e0a448 416-418
+config.py
+  21544d8bf6e0a448 6-14,27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.34",
+  "base_commit_sha": "ec005a1cfb3843b3f448e7b53649c8e7bb8d29d3",
+  "prompts": {
+    "21544d8bf6e0a448": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3679ca00-7157-463e-9efc-ee2335ec0ea2",
+        "model": "default"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 15,
+      "total_deletions": 18,
+      "accepted_lines": 13,
+      "overriden_lines": 0
+    }
+  }
+}
