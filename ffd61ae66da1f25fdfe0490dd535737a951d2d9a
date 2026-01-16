@@ -1,0 +1,27 @@
+.gitignore
+  21544d8bf6e0a448 26,29
+README.md
+  21544d8bf6e0a448 144-146
+LICENSE
+  21544d8bf6e0a448 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.34",
+  "base_commit_sha": "ffd61ae66da1f25fdfe0490dd535737a951d2d9a",
+  "prompts": {
+    "21544d8bf6e0a448": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3679ca00-7157-463e-9efc-ee2335ec0ea2",
+        "model": "default"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 26,
+      "total_deletions": 2,
+      "accepted_lines": 26,
+      "overriden_lines": 0
+    }
+  }
+}
