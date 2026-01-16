@@ -141,7 +141,9 @@ The premium guide gets you through that full loop in under 60 minutes, with unde
 
 ## 📄 License
 
-This is a starter kit - use it however you want!
+MIT License - see [LICENSE](LICENSE) file for details.
+
+This is a starter kit - use it however you want! Modify it, build on it, use it commercially. The only requirement is that you include the original license notice if you redistribute it.
 
 ## 🙏 Credits
 
