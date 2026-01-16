@@ -30,9 +30,3 @@ data/*.markdown
 
 # Logs
 *.log
-
-# Paid guide and internal docs (do not commit)
-PAID_GUIDE.txt
-
-# Database schema (available in Notion document)
-schema.sql
