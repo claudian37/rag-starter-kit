@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.34",
+  "base_commit_sha": "ee80c05c937f688191db5cef0ea35b1a4581d4ce",
+  "prompts": {
+    "21544d8bf6e0a448": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3679ca00-7157-463e-9efc-ee2335ec0ea2",
+        "model": "default"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 129,
+      "total_deletions": 14,
+      "accepted_lines": 126,
+      "overriden_lines": 0
+    }
+  }
+}
