@@ -3,6 +3,15 @@ RAG Starter Kit: Configuration
 
 Centralized configuration for easy customization. Edit these values to adjust
 the behavior of the RAG system without modifying core code.
+
+Configuration Priority:
+1. Environment variables (.env file) - Recommended for API keys and secrets
+2. Default values in this file - Used if env var is not set
+
+To configure:
+- Create a .env file in the project root (copy from .env.example)
+- Add your settings: OPENAI_API_KEY=sk-..., SUPABASE_URL=..., etc.
+- For advanced settings, you can override defaults via .env or edit this file directly
 """
 
 import os
@@ -15,7 +24,7 @@ load_dotenv()
 # ============================================================================
 
 # Application name displayed in the UI
-APP_NAME = os.getenv("APP_NAME", "Claudia's RAG Starter Kit")
+APP_NAME = os.getenv("APP_NAME", "My RAG Starter Kit")
 
 # ============================================================================
 # OpenAI Configuration

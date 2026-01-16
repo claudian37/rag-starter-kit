@@ -33,9 +33,6 @@ data/*.markdown
 
 # Paid guide and internal docs (do not commit)
 PAID_GUIDE.txt
-DEPLOYMENT_CHECKLIST.md
-TESTING_GUIDE.md
-IMPROVEMENTS.md
 
 # Database schema (available in Notion document)
 schema.sql

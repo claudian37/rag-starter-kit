@@ -351,22 +351,6 @@ async def main():
     with st.sidebar:
         st.header("⚙️ Configuration")
         
-        # API Key input (optional, can use .env or secrets)
-        st.subheader("API Keys")
-        st.caption("Configure here or use .env file")
-        
-        openai_key_input = st.text_input(
-            "OpenAI API Key",
-            type="password",
-            value=os.getenv("OPENAI_API_KEY", ""),
-            help="Get your API key from https://platform.openai.com/api-keys"
-        )
-        
-        if openai_key_input:
-            os.environ["OPENAI_API_KEY"] = openai_key_input
-        
-        st.divider()
-        
         # RAG Settings
         st.subheader("RAG Settings")
         
@@ -428,7 +412,11 @@ async def main():
         supabase, openai_client = init_clients()
         
         if not openai_client:
-            st.error("⚠️ OpenAI API key not configured. Please add it in the sidebar or .env file.")
+            st.error(
+                "⚠️ **OpenAI API key not configured**\n\n"
+                "**Fix:** Add `OPENAI_API_KEY` to your `.env` file\n"
+                "Get your API key from: https://platform.openai.com/api-keys"
+            )
             st.stop()
         
         # Add user message to history
