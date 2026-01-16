@@ -1,5 +1,5 @@
 # Dockerfile for RAG Starter Kit
-# Optimized for Koyeb deployment
+# Works on Koyeb, Railway, Render, Fly.io, and any Docker-compatible platform
 
 FROM python:3.12-slim
 

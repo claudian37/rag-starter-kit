@@ -147,6 +147,7 @@ async def get_embedding(text: str, openai_client: AsyncOpenAI) -> List[float]:
         return response.data[0].embedding
     except Exception as e:
         error_msg = str(e).lower()
+        print(f"   ❌ ERROR generating embedding: {e}")
         if "invalid_api_key" in error_msg:
             st.error("❌ **Invalid OpenAI API key**\n\nGet a new key from https://platform.openai.com/api-keys")
         elif "insufficient_quota" in error_msg or "billing" in error_msg:
@@ -185,11 +186,14 @@ async def retrieve_relevant_documents(
     """
     try:
         # Generate query embedding
+        print(f"   Generating query embedding...")
         query_embedding = await get_embedding(query, openai_client)
+        print(f"   Query embedding generated ({len(query_embedding)} dimensions)")
         
         # Call the match_documents function
         # Using an RPC function encapsulates the SQL logic and allows parameterized queries
         try:
+            print(f"   Searching database (threshold: {similarity_threshold})...")
             result = supabase.rpc(
                 "match_documents",
                 {
@@ -219,7 +223,10 @@ async def retrieve_relevant_documents(
             return []
         
         if not result.data:
+            print(f"   ⚠️ Database returned no results")
             return []
+        
+        print(f"   Database returned {len(result.data)} candidate(s)")
         
         # Filter by threshold and limit results
         filtered = [
@@ -232,12 +239,15 @@ async def retrieve_relevant_documents(
         # results is better than no results, but we limit to 2 to avoid overwhelming
         # the user with irrelevant content.
         if not filtered and result.data:
+            print(f"   ⚠️ No results above threshold ({similarity_threshold}), returning top 2 anyway")
             return result.data[:2]
         
+        print(f"   {len(filtered)} document(s) passed similarity threshold")
         return filtered[:max_results]
         
     except Exception as e:
         # Error already handled in get_embedding or RPC call
+        print(f"   ❌ ERROR in retrieval: {e}")
         return []
 
 
@@ -299,9 +309,11 @@ Context Documents:
             temperature=LLM_TEMPERATURE,
             max_tokens=LLM_MAX_TOKENS,
         )
-        return response.choices[0].message.content
+        response_text = response.choices[0].message.content
+        return response_text
     except Exception as e:
         error_msg = str(e).lower()
+        print(f"   ❌ ERROR generating response: {e}")
         if "invalid_api_key" in error_msg:
             return "❌ **Error:** Invalid OpenAI API key. Get a new key from https://platform.openai.com/api-keys"
         elif "insufficient_quota" in error_msg or "billing" in error_msg:
@@ -408,10 +420,15 @@ async def main():
     
     # Chat input
     if prompt := st.chat_input("Ask a question..."):
+        print(f"\n{'='*60}")
+        print(f"📝 User Query: {prompt}")
+        print(f"{'='*60}")
+        
         # Initialize clients
         supabase, openai_client = init_clients()
         
         if not openai_client:
+            print("❌ ERROR: OpenAI API key not configured")
             st.error(
                 "⚠️ **OpenAI API key not configured**\n\n"
                 "**Fix:** Add `OPENAI_API_KEY` to your `.env` file\n"
@@ -432,6 +449,7 @@ async def main():
         # Generate response
         with st.chat_message("assistant"):
             with st.spinner("🔍 Searching knowledge base..."):
+                print(f"🔍 Retrieving documents (threshold: {similarity_threshold}, max: {max_sources})...")
                 # Retrieve relevant documents
                 sources = await retrieve_relevant_documents(
                     supabase,
@@ -442,15 +460,23 @@ async def main():
                 )
             
             if sources:
+                print(f"✅ Retrieved {len(sources)} document(s):")
+                for i, source in enumerate(sources, 1):
+                    similarity = int(source.get("similarity", 0) * 100)
+                    title = source.get("title", "Untitled")
+                    print(f"   {i}. {title} (similarity: {similarity}%)")
+                
                 st.success(f"✅ Found {len(sources)} relevant document(s)")
                 
                 with st.spinner("🤖 Generating response..."):
+                    print(f"🤖 Generating response with {LLM_MODEL}...")
                     # Generate AI response
                     response = await generate_response(
                         openai_client,
                         prompt,
                         sources
                     )
+                    print(f"✅ Response generated ({len(response)} characters)")
                 
                 # Display response
                 st.markdown(response)
@@ -465,6 +491,7 @@ async def main():
                     "sources": sources
                 })
             else:
+                print("⚠️ No relevant documents found (similarity threshold may be too high)")
                 st.warning("No relevant documents found. Try rephrasing your question.")
                 st.session_state.messages.append({
                     "role": "assistant",

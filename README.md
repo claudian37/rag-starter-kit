@@ -119,8 +119,8 @@ rag-starter-kit/
 ├── config.py           # Configuration (models, chunk size, thresholds)
 ├── validate_setup.py   # Setup validation script
 ├── requirements.txt   # Python dependencies
-├── Dockerfile          # Container for deployment
-├── koyeb.yaml          # Koyeb deployment config
+├── Dockerfile          # Universal container (works on Koyeb, Railway, Render, etc.)
+├── Procfile            # Fallback run command (works on Heroku, some platforms)
 ├── .env.example        # Environment variable template
 └── data/               # Your Markdown files go here
 
