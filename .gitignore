@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data directory (optional - remove if you want to track data files)
+data/*.md
+data/*.markdown
+
+# Logs
+*.log
+
+# Paid guide and internal docs (do not commit)
+PAID_GUIDE.txt
+DEPLOYMENT_CHECKLIST.md
+TESTING_GUIDE.md
+IMPROVEMENTS.md
+
+# Database schema (available in Notion document)
+schema.sql
