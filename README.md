@@ -114,15 +114,17 @@ The guide includes everything: Supabase setup, OpenAI configuration, local testi
 
 ```
 rag-starter-kit/
-├── app.py              # Streamlit chat UI + RAG logic
-├── ingest.py           # Data processing script
-├── config.py           # Configuration (models, chunk size, thresholds)
-├── validate_setup.py   # Setup validation script
-├── requirements.txt   # Python dependencies
-├── Dockerfile          # Universal container (works on Koyeb, Railway, Render, etc.)
-├── Procfile            # Fallback run command (works on Heroku, some platforms)
-├── .env.example        # Environment variable template
-└── data/               # Your Markdown files go here
+├── src/
+│   ├── app.py              # Streamlit chat UI + RAG logic
+│   ├── ingest.py           # Data processing script
+│   ├── config.py            # Configuration (models, chunk size, thresholds)
+│   └── validate_setup.py   # Setup validation script
+├── data/                    # Your Markdown files go here
+├── requirements.txt         # Python dependencies
+├── Dockerfile               # Universal container (works on Koyeb, Railway, Render, etc.)
+├── Procfile                 # Fallback run command (works on Heroku, some platforms)
+├── runtime.txt              # Python version for buildpack deployments
+└── .env.example             # Environment variable template
 
 **Note:** `schema.sql` is not included in this repository. It's available in the premium guide with complete explanations.
 ```

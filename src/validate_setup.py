@@ -6,8 +6,13 @@ Provides clear error messages to help users diagnose issues.
 """
 
 import os
-from typing import List, Tuple, Optional
+import sys
 from pathlib import Path
+
+# Add src/ to Python path for imports when running from repo root
+sys.path.insert(0, str(Path(__file__).parent))
+
+from typing import List, Tuple, Optional
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -210,7 +215,7 @@ def validate_openai_connection() -> Tuple[bool, Optional[str]]:
 
 def validate_data_directory() -> Tuple[bool, Optional[str], int]:
     """
-    Validate that data directory exists and has files.
+    Validate that data directory exists and has files (data/ at repo root).
     
     Returns:
         (is_valid, error_message, file_count)

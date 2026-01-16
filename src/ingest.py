@@ -1,14 +1,14 @@
 """
 RAG Starter Kit: Data Ingestion Script
 
-This script processes Markdown files from the /data folder and ingests them into Supabase
+This script processes Markdown files from the data/ folder and ingests them into Supabase
 with vector embeddings for semantic search.
 
 Usage:
-    python ingest.py
+    python src/ingest.py
 
 Requirements:
-    - Markdown files (.md or .markdown) in ./data/ directory
+    - Markdown files (.md or .markdown) in data/ directory (at repo root)
     - Environment variables: SUPABASE_URL, SUPABASE_SERVICE_KEY, OPENAI_API_KEY
 """
 
@@ -16,6 +16,10 @@ import os
 import asyncio
 import sys
 from pathlib import Path
+
+# Add src/ to Python path for imports when running from repo root
+sys.path.insert(0, str(Path(__file__).parent))
+
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 from dotenv import load_dotenv
@@ -142,7 +146,7 @@ async def get_embedding(text: str) -> List[float]:
         elif "model" in error_msg and "not found" in error_msg:
             raise ValueError(
                 f"❌ Embedding model '{EMBEDDING_MODEL}' not found\n"
-                "💡 Check config.py and verify the model name is correct"
+                "💡 Check src/config.py and verify the model name is correct"
             )
         else:
             raise ValueError(f"❌ Error getting embedding: {e}\n💡 Check your OpenAI API key and account status")
@@ -350,7 +354,7 @@ async def process_file(file_path: Path) -> bool:
 
 async def main():
     """
-    Main ingestion function: process all Markdown files in ./data directory.
+    Main ingestion function: process all Markdown files in data/ directory (at repo root).
     
     Processing files sequentially is safer for rate limits but slower.
     For production with 100+ files, consider batching 5-10 files at a time with
@@ -360,7 +364,7 @@ async def main():
     
     if not data_dir.exists():
         print(f"❌ Data directory not found: {data_dir}")
-        print("💡 Create a ./data/ directory and add your Markdown files there.")
+        print("💡 Create a data/ directory at the repo root and add your Markdown files there.")
         return
     
     # Find all Markdown files
@@ -368,7 +372,7 @@ async def main():
     
     if not markdown_files:
         print(f"⚠️ No Markdown files found in {data_dir}")
-        print("💡 Add .md or .markdown files to the ./data/ directory.")
+        print("💡 Add .md or .markdown files to the data/ directory (at repo root).")
         return
     
     print(f"🚀 Starting ingestion of {len(markdown_files)} file(s)...")

@@ -4,11 +4,17 @@ RAG Starter Kit: Streamlit Chat Interface
 A clean, production-ready RAG chat interface using OpenAI and Supabase directly.
 
 Usage:
-    streamlit run app.py
+    streamlit run src/app.py
 """
 
 import os
 import asyncio
+import sys
+from pathlib import Path
+
+# Add src/ to Python path for imports when running from repo root
+sys.path.insert(0, str(Path(__file__).parent))
+
 import streamlit as st
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
@@ -321,7 +327,7 @@ Context Documents:
         elif "rate_limit" in error_msg:
             return "⚠️ **Error:** OpenAI rate limit exceeded. Wait a few minutes and try again."
         elif "model" in error_msg and "not found" in error_msg:
-            return f"❌ **Error:** Model '{LLM_MODEL}' not found. Check config.py for valid models."
+            return f"❌ **Error:** Model '{LLM_MODEL}' not found. Check src/config.py for valid models."
         else:
             return f"❌ **Error generating response:** {e}"
 
@@ -383,7 +389,7 @@ async def main():
             help="Minimum similarity score (0-1). Higher = more strict matching."
         )
         
-        st.caption(f"Using model: {LLM_MODEL} (configure in config.py)")
+        st.caption(f"Using model: {LLM_MODEL} (configure in src/config.py)")
         
         st.divider()
         

@@ -11,7 +11,7 @@ Configuration Priority:
 To configure:
 - Create a .env file in the project root (copy from .env.example)
 - Add your settings: OPENAI_API_KEY=sk-..., SUPABASE_URL=..., etc.
-- For advanced settings, you can override defaults via .env or edit this file directly
+- For advanced settings, you can override defaults via .env or edit src/config.py directly
 """
 
 import os
