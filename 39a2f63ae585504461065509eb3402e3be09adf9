@@ -1,0 +1,37 @@
+Dockerfile
+  21544d8bf6e0a448 31-32
+Procfile
+  21544d8bf6e0a448 1
+src/config.py
+  21544d8bf6e0a448 1-75
+src/app.py
+  21544d8bf6e0a448 1-522
+src/__init__.py
+  21544d8bf6e0a448 1
+src/ingest.py
+  21544d8bf6e0a448 1-467
+README.md
+  21544d8bf6e0a448 117-122,126-127
+src/validate_setup.py
+  21544d8bf6e0a448 1-332
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.34",
+  "base_commit_sha": "39a2f63ae585504461065509eb3402e3be09adf9",
+  "prompts": {
+    "21544d8bf6e0a448": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3679ca00-7157-463e-9efc-ee2335ec0ea2",
+        "model": "default"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 1418,
+      "total_deletions": 19,
+      "accepted_lines": 1408,
+      "overriden_lines": 0
+    }
+  }
+}
