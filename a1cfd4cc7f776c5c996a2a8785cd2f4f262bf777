@@ -1,0 +1,25 @@
+README.md
+  21544d8bf6e0a448 5,7,12,19,26,32,42,46-48,58,60-61,65,71-74,76,86,88,107,116,124,132
+src/config.py
+  21544d8bf6e0a448 37,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.34",
+  "base_commit_sha": "a1cfd4cc7f776c5c996a2a8785cd2f4f262bf777",
+  "prompts": {
+    "21544d8bf6e0a448": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3679ca00-7157-463e-9efc-ee2335ec0ea2",
+        "model": "default"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 48,
+      "total_deletions": 76,
+      "accepted_lines": 28,
+      "overriden_lines": 1
+    }
+  }
+}
