@@ -34,7 +34,7 @@ APP_NAME = os.getenv("APP_NAME", "My RAG Starter Kit")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
 
 # LLM model for generating answers
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o-mini")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-5-mini")
 
 # Temperature for LLM (0.0 = deterministic, 1.0 = creative)
 LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.7"))
@@ -47,7 +47,7 @@ LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "800"))
 # ============================================================================
 
 # Maximum characters per chunk
-MAX_CHUNK_SIZE = int(os.getenv("MAX_CHUNK_SIZE", "8000"))
+MAX_CHUNK_SIZE = int(os.getenv("MAX_CHUNK_SIZE", "5000"))
 
 # ============================================================================
 # Retrieval Configuration
