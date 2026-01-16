@@ -1,0 +1,29 @@
+Procfile
+  21544d8bf6e0a448 1
+app.py
+  21544d8bf6e0a448 150,189,191,196,226,229-230,242,245,250,312-313,316,423-426,431,452,463-468,472,479,494
+Dockerfile
+  21544d8bf6e0a448 2
+README.md
+  21544d8bf6e0a448 122-123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.34",
+  "base_commit_sha": "3f23c8168cda6fd3ff688450359166b389329143",
+  "prompts": {
+    "21544d8bf6e0a448": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3679ca00-7157-463e-9efc-ee2335ec0ea2",
+        "model": "default"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 42,
+      "total_deletions": 8,
+      "accepted_lines": 32,
+      "overriden_lines": 0
+    }
+  }
+}
