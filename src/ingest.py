@@ -41,7 +41,6 @@ from validate_setup import validate_env_vars, validate_supabase_connection, vali
 
 load_dotenv()
 
-# Initialize clients (will be validated before use)
 openai_client: Optional[AsyncOpenAI] = None
 supabase: Optional[Client] = None
 
@@ -185,7 +184,7 @@ async def get_summary(text: str) -> str:
                 {"role": "user", "content": f"Content:\n{preview}"},
             ],
             temperature=SUMMARY_TEMPERATURE,
-            max_tokens=SUMMARY_MAX_TOKENS
+            max_completion_tokens=SUMMARY_MAX_TOKENS
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -252,7 +251,8 @@ async def process_file(file_path: Path) -> bool:
         url = f"file://{file_path.name}"  # Use filename as URL identifier
         source = "markdown_file"
         
-        # Check if already processed
+        # Check if already processed: if rows exist for this URL, we skip re-ingesting.
+        # This makes the script safe to re-run without creating duplicate rows.
         if not supabase:
             raise ValueError("Supabase client not initialized. Check your SUPABASE_URL and SUPABASE_SERVICE_KEY.")
         
@@ -280,7 +280,10 @@ async def process_file(file_path: Path) -> bool:
                     "   Get the Service Role Key from: Settings → API → Service Role Key"
                 )
             else:
-                raise ValueError(f"❌ Error checking existing documents: {e}\n💡 Check your Supabase credentials and table setup")
+                raise ValueError(
+                    f"❌ Error checking existing documents: {e}\n"
+                    "💡 Check your Supabase credentials and table setup"
+                )
         
         # Chunk the content
         chunks = chunk_text(content)

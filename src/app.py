@@ -313,7 +313,7 @@ Context Documents:
                 {"role": "user", "content": query},
             ],
             temperature=LLM_TEMPERATURE,
-            max_tokens=LLM_MAX_TOKENS,
+            max_completion_tokens=LLM_MAX_TOKENS,
         )
         response_text = response.choices[0].message.content
         return response_text
