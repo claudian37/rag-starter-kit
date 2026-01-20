@@ -1,0 +1,25 @@
+src/app.py
+  21544d8bf6e0a448 316
+src/ingest.py
+  21544d8bf6e0a448 187,254-255,283-285
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.34",
+  "base_commit_sha": "17951d52bf57c559ba37cf08afed17b98a9ecadd",
+  "prompts": {
+    "21544d8bf6e0a448": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3679ca00-7157-463e-9efc-ee2335ec0ea2",
+        "model": "default"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 84,
+      "total_deletions": 81,
+      "accepted_lines": 33,
+      "overriden_lines": 0
+    }
+  }
+}
