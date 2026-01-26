@@ -1,6 +1,8 @@
-# RAG Starter Kit
+# The 60-Minute RAG Blueprint
 
-A working RAG system to get you from zero to deployed in **under an hour**. Built by [Claudia Ng](https://substack.com/@claudiang1) for paid subscribers of [AI Weekender](https://aiweekender.substack.com).
+**A framework-free RAG reference architecture.** Built with Python, Supabase, and Koyeb. Designed for clarity, not bloat.
+
+Get from zero to deployed in **under 60 minutes**. Built by [Claudia Ng](https://substack.com/@claudiang1) for paid subscribers of [AI Weekender](https://aiweekender.substack.com).
 
 ## ⚠️ Premium Guide Required
 
@@ -55,25 +57,29 @@ The database schema (essential for vector search) is not included in this repo. 
 
 ## 📁 What's in the Repo
 
-Working code optimized for learning:
+A professional reference implementation optimized for clarity:
 
-- **Clean structure** - See how everything connects
-- **Educational code** - Comments explain engineering tradeoffs
-- **Production patterns** - Error handling, validation, configuration
+- **Framework-free architecture** - See how RAG works without abstraction layers
+- **Clean structure** - Understand how every component connects
+- **Educational code** - Comments explain engineering tradeoffs and decisions
+- **Production patterns** - Error handling, validation, configuration management
 - **Deployment-ready** - Docker and Koyeb configs included
 
-**How it works:** Add Markdown files to `./data/`, run the ingestion script, and you'll have a searchable knowledge base.
+**How it works:** Add Markdown files to `./data/`, run the ingestion script, and you'll have a searchable knowledge base. Clone it, remove the git history, and make it your own.
 
 ---
 
 ## 🎯 Who This Is For
 
-- Engineers & Data Scientists moving from theory to practice
+- Engineers who want a clean reference implementation without framework bloat
+- Data Scientists moving from theory to practice
 - Content creators making their writing searchable
-- Builders wanting a clean baseline to adapt
+- Builders wanting a production-ready baseline to adapt
 - Portfolio builders demonstrating AI engineering skills
 
 **Not for:** Complex enterprise architectures, framework comparisons, or video courses. This is about **code**, not lectures.
+
+**Why framework-free?** When you understand the pieces, you can adapt them. This blueprint shows you the architecture, not just how to use someone else's abstraction.
 
 ---
 
