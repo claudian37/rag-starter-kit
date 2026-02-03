@@ -50,6 +50,16 @@ LLM_MAX_TOKENS = int(os.getenv("LLM_MAX_TOKENS", "800"))
 MAX_CHUNK_SIZE = int(os.getenv("MAX_CHUNK_SIZE", "5000"))
 
 # ============================================================================
+# Substack Ingestion Configuration
+# ============================================================================
+
+# Optional: Substack publication name (used to build default feed URL)
+SUBSTACK_PUBLICATION_NAME = os.getenv("SUBSTACK_PUBLICATION_NAME", "")
+
+# Optional: Override Substack feed URL
+SUBSTACK_FEED_URL = os.getenv("SUBSTACK_FEED_URL", "")
+
+# ============================================================================
 # Retrieval Configuration
 # ============================================================================
 
