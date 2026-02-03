@@ -5,9 +5,16 @@ Fetches a Substack RSS feed, cleans HTML into stable text, and writes Markdown
 files that can be ingested with src/ingest.py.
 
 Usage:
+    # Basic usage with an explicit feed URL
     python src/parse_substack.py --feed-url https://example.substack.com/feed
-    python src/parse_substack.py --publication-base-url https://example.substack.com
-    python src/parse_substack.py --dry-run
+    
+    # With a publication base URL for resolving relative links
+    python src/parse_substack.py --feed-url https://example.substack.com/feed \
+        --publication-base-url https://example.substack.com
+    
+    # Dry run (no files written) while still providing a feed URL
+    python src/parse_substack.py --feed-url https://example.substack.com/feed \
+        --dry-run
 """
 
 import argparse
@@ -229,9 +236,10 @@ def remove_boilerplate_elements(soup: BeautifulSoup) -> None:
         if any(keyword in attr_text for keyword in ("subscribe", "signup", "footer", "nav", "comment", "share")):
             element.decompose()
             continue
-        text = element.get_text(" ", strip=True).lower()
-        if any(phrase in text for phrase in BOILERPLATE_PHRASES) and len(text) < 120:
-            element.decompose()
+        if element.find(True) is None:
+            text = element.get_text(" ", strip=True).lower()
+            if any(phrase in text for phrase in BOILERPLATE_PHRASES) and len(text) < 120:
+                element.decompose()
 
 
 def extract_article_root(soup: BeautifulSoup) -> Tag:
@@ -267,6 +275,10 @@ def html_to_structured_text(html: str) -> str:
         if isinstance(child, NavigableString):
             continue
         if not isinstance(child, Tag):
+            continue
+        if child.name in {"p", "h1", "h2", "h3", "h4", "h5", "h6"} and child.find_parent(
+            {"blockquote", "ul", "ol"}
+        ):
             continue
         if child.name in {"h1", "h2", "h3", "h4", "h5", "h6"}:
             level = int(child.name[1])
@@ -390,7 +402,8 @@ def parse_entry(
     if dry_run:
         sample = cleaned_text[:500] + ("..." if len(cleaned_text) > 500 else "")
         print("   sample:")
-        print(f"   {sample.replace(os.linesep, ' ')}")
+        normalized_sample = sample.replace("\r\n", "\n").replace("\r", "\n").replace("\n", " ")
+        print(f"   {normalized_sample}")
         return "dry_run"
 
     if not cleaned_text.strip():
@@ -421,7 +434,7 @@ def main() -> None:
     parser.add_argument("--dry-run", action="store_true", help="Print 1-3 cleaned samples without writing files")
     parser.add_argument("--fetch-full-html", action="store_true", help="Fetch full HTML when RSS looks truncated")
     parser.add_argument("--limit", type=int, default=0, help="Limit number of entries to process")
-    parser.add_argument("--output-dir", default="./data/substack", help="Output directory for Markdown files")
+    parser.add_argument("--output-dir", default="./data", help="Output directory for Markdown files")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing files")
     parser.add_argument("--skip-paid", action="store_true", help="Skip paywalled posts and log them")
     args = parser.parse_args()

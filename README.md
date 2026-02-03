@@ -141,8 +141,9 @@ python src/ingest.py
 ```
 
 **Intended data flow:**
-1. `parse_substack.py` cleans RSS/HTML and writes `.md` files to `./data/substack/` (creates the folder if missing).
-2. `ingest.py` reads those Markdown files and upserts embeddings into Supabase.
+1. `parse_substack.py` cleans RSS/HTML and writes `.md` files to `./data/` (creates the folder if missing).
+2. `ingest.py` reads Markdown files from the top-level `./data/` folder (non-recursive) and upserts embeddings into Supabase.
+   If you set `--output-dir` to a subdirectory like `./data/substack/`, move or copy files into `./data/` before running `ingest.py`.
 
 **Optional environment variables:**
 - `SUBSTACK_PUBLICATION_NAME` (used to build `https://<name>.substack.com/feed`)
