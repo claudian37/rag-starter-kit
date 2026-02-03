@@ -30,3 +30,6 @@ data/*.markdown
 
 # Logs
 *.log
+
+# Local scripts
+src/verify_substack_ingest.py
