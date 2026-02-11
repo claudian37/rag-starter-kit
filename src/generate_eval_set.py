@@ -10,7 +10,7 @@ Usage:
     python src/generate_eval_set.py
     python src/generate_eval_set.py --num-per-chunk 2 --output eval/questions.jsonl
 
-Output: JSONL file with {question, chunk_id, chunk_text} for benchmark.py
+Output: JSONL file with {question, chunk_id, chunk} (chunk truncated to 500 characters) for benchmark.py
 """
 
 import argparse
@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
-from config import EMBEDDING_MODEL, LLM_MODEL
+from config import LLM_MODEL
 from ingest import chunk_text
 
 load_dotenv()

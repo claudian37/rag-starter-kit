@@ -103,7 +103,7 @@ rag-starter-kit/
 │   ├── app.py              # Streamlit chat UI + RAG logic
 │   ├── ingest.py           # Data processing script
 │   ├── parse_substack.py   # Substack RSS/HTML parsing
-│   ├── generate_eval_set.py # Synthetic Q&A generation for benchmarking
+│   ├── generate_eval_set.py # Synthetic question generation for benchmarking
 │   ├── benchmark.py        # Recall@K, MRR@K retrieval benchmark
 │   ├── config.py           # Configuration
 │   └── validate_setup.py   # Setup validation
