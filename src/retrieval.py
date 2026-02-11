@@ -61,15 +61,24 @@ async def retrieve_documents(
     """
     query_embedding = await get_embedding(query, openai_client)
 
-    result = supabase.rpc(
-        "match_documents",
-        {
-            "query_embedding": query_embedding,
-            "match_count": max_results * 2,
-            "similarity_threshold": similarity_threshold,
-            "filter_source": None,
-        },
-    ).execute()
+    try:
+        result = supabase.rpc(
+            "match_documents",
+            {
+                "query_embedding": query_embedding,
+                "match_count": max_results * 2,
+                "similarity_threshold": similarity_threshold,
+                "filter_source": None,
+            },
+        ).execute()
+    except Exception as e:
+        if verbose:
+            print(
+                "   ⚠️ Error while calling Supabase match_documents RPC. "
+                "This may indicate a missing RPC function, pgvector not being "
+                f"enabled/configured, or a connectivity issue:\n      {e}"
+            )
+        return []
 
     if not result.data:
         return []
