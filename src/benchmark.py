@@ -159,18 +159,29 @@ async def run_benchmark(
     print(f"📊 Benchmarking {len(eval_items)} questions (top_k: {top_k_values}, {concurrency} concurrent)")
     print("-" * 50)
 
-    tasks = [
-        asyncio.create_task(fetch_one(item, i)) for i, item in enumerate(eval_items)
-    ]
-    results = [None] * len(eval_items)
-    for coro in tqdm(
-        asyncio.as_completed(tasks),
-        total=len(eval_items),
-        desc="Retrieving",
-        unit="q",
-    ):
-        index, preds, chunk_id = await coro
-        results[index] = (preds, chunk_id)
+    results: list[tuple[list[str] | None, str | None] | None] = [None] * len(eval_items)
+    queue: asyncio.Queue[tuple[int | None, dict | None]] = asyncio.Queue()
+    for i, item in enumerate(eval_items):
+        await queue.put((i, item))
+    for _ in range(concurrency):
+        await queue.put((None, None))
+
+    async def worker(pbar: tqdm) -> None:
+        while True:
+            index, item = await queue.get()
+            try:
+                if index is None:
+                    return
+                _, preds, chunk_id = await fetch_one(item, index)
+                results[index] = (preds, chunk_id)
+                pbar.update(1)
+            finally:
+                queue.task_done()
+
+    with tqdm(total=len(eval_items), desc="Retrieving", unit="q") as pbar:
+        workers = [asyncio.create_task(worker(pbar)) for _ in range(concurrency)]
+        await queue.join()
+        await asyncio.gather(*workers)
 
     all_predictions: list[list[str]] = []
     ground_truths: list[list[str]] = []
@@ -235,9 +246,9 @@ def bootstrap_confidence_intervals(
 
     bootstrap_means.sort()
     alpha = 1 - ci
-    lo_idx = int(n_samples * (alpha / 2))
-    hi_idx = int(n_samples * (1 - alpha / 2))
-    # Clamp indices to valid range to avoid IndexError for edge-case ci values
+    # Use (n_samples - 1) * p for percentile indexing so 97.5% -> index 974 for n=1000
+    lo_idx = int((n_samples - 1) * (alpha / 2))
+    hi_idx = int((n_samples - 1) * (1 - alpha / 2))
     lo_idx = max(0, min(lo_idx, n_samples - 1))
     hi_idx = max(0, min(hi_idx, n_samples - 1))
     mean = sum(per_question_scores) / n
@@ -246,13 +257,15 @@ def bootstrap_confidence_intervals(
 
 def print_results(metrics: dict, bootstrap: bool = False, n_samples: int = 1000):
     """Print metrics in a readable table. With bootstrap, show 95% CI."""
-    bootstrap_data = metrics.pop("_bootstrap_data", None)
+    bootstrap_data = metrics.get("_bootstrap_data")
 
     print("\n" + "=" * 60)
     print("BENCHMARK RESULTS" + (" (with 95% bootstrap CI)" if bootstrap else ""))
     print("=" * 60)
 
     for name in sorted(metrics.keys()):
+        if name == "_bootstrap_data":
+            continue
         value = metrics[name]
         if bootstrap and bootstrap_data and name in bootstrap_data:
             mean, ci_lo, ci_hi = bootstrap_confidence_intervals(
