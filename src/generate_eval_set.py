@@ -4,8 +4,6 @@ RAG Starter Kit: Synthetic Evaluation Set Generator
 Generates question–chunk pairs for benchmarking retrieval. Uses LLM to create
 questions that can be answered by each chunk. Run this AFTER ingesting your data.
 
-Based on concepts from the "Systematically Improving RAG" course (Maven).
-
 Usage:
     python src/generate_eval_set.py
     python src/generate_eval_set.py --num-per-chunk 2 --output eval/questions.jsonl
@@ -31,13 +29,13 @@ from ingest import chunk_text
 
 load_dotenv()
 
-# Constraints to encourage diverse questions (from course: Week 1 synthetic_questions)
+# Constraints to encourage diverse questions (variations in style, scope, and framing)
 DIVERSITY_CONSTRAINTS = [
-    "If there's a time period mentioned, modify it slightly (e.g. 6 months instead of a year).",
-    "Add some irrelevant context (e.g. a backstory or scenario not in the chunk).",
-    "Change specific values (e.g. different product, location, or number).",
-    "Phrase as a casual or abbreviated question a real user might ask.",
-    "Ask from a different angle (e.g. 'how do I' vs 'what happens if').",
+    "Shift timeframes when applicable (e.g. 'last quarter' vs 'this year', 'past 3 months' vs 'annually').",
+    "Weave in a tangential detail (e.g. a hypothetical scenario or unrelated fact) that does not appear in the chunk.",
+    "Swap concrete entities (e.g. a named company for another, a city for a different one, or a number for another).",
+    "Use colloquial or shorthand phrasing (e.g. abbreviations, casual tone) as a real user might type.",
+    "Reframe the question (e.g. from 'what is X' to 'why does X happen', or from beginner to expert lens).",
 ]
 
 
@@ -129,38 +127,46 @@ async def main(
     client = AsyncOpenAI(api_key=api_key)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Build list of (chunk_id, chunk_text, constraint) for each generation
-    tasks = []
-    for chunk_id, text in chunk_list:
-        for _ in range(num_per_chunk):
-            constraint = random.choice(DIVERSITY_CONSTRAINTS)
-            tasks.append((chunk_id, text, constraint))
-
-    # Process in batches to bound memory (avoids creating all coros upfront)
+    # Stream tasks in batches (avoids holding all tasks/coros in memory at once)
     sem = asyncio.Semaphore(10)
+    total = len(chunk_list) * num_per_chunk
 
     async def generate_with_sem(chunk_id: str, text: str, constraint: str):
         async with sem:
             return await generate_question_for_chunk(client, text, chunk_id, constraint)
 
-    results = []
-    total = len(tasks)
+    async def process_batch(
+        current_batch: list[tuple[str, str, str]], done_count: int, written_count: int
+    ) -> tuple[int, int]:
+        if not current_batch:
+            return done_count, written_count
+        coros = [generate_with_sem(cid, t, c) for cid, t, c in current_batch]
+        raw_results = await asyncio.gather(*coros)
+        batch_results = [r for r in raw_results if r is not None]
+        for item in batch_results:
+            f.write(json.dumps(item) + "\n")
+        done_count += len(current_batch)
+        written_count += len(batch_results)
+        if done_count % 500 == 0 or done_count == total:
+            print(f"   ... {done_count}/{total} done")
+        return done_count, written_count
+
     print(f"   Generating {total} questions (batch size {batch_size}, 10 concurrent)...")
+    done, written = 0, 0
+    batch: list[tuple[str, str, str]] = []
 
     with open(output_path, "w", encoding="utf-8") as f:
-        for i in range(0, total, batch_size):
-            batch = tasks[i : i + batch_size]
-            coros = [generate_with_sem(cid, t, c) for cid, t, c in batch]
-            raw_results = await asyncio.gather(*coros)
-            batch_results = [r for r in raw_results if r is not None]
-            results.extend(batch_results)
-            for item in batch_results:
-                f.write(json.dumps(item) + "\n")
-            done = min(i + batch_size, total)
-            if done % 500 == 0 or done == total:
-                print(f"   ... {done}/{total} done")
+        for chunk_id, text in chunk_list:
+            for _ in range(num_per_chunk):
+                constraint = random.choice(DIVERSITY_CONSTRAINTS)
+                batch.append((chunk_id, text, constraint))
+                if len(batch) >= batch_size:
+                    done, written = await process_batch(batch, done, written)
+                    batch = []
+        if batch:
+            done, written = await process_batch(batch, done, written)
 
-    print(f"✅ Wrote {len(results)} question–chunk pairs to {output_path}")
+    print(f"✅ Wrote {written} question–chunk pairs to {output_path}")
 
 
 if __name__ == "__main__":

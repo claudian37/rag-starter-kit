@@ -4,8 +4,6 @@ RAG Starter Kit: Retrieval Benchmark
 Measures Recall@K and MRR@K on a synthetic eval set. Run AFTER generate_eval_set.py
 and ingestion. Use before/after any retrieval change to quantify impact.
 
-Based on concepts from the "Systematically Improving RAG" course (Maven).
-
 Usage:
     python src/benchmark.py
     python src/benchmark.py --eval-file data/eval/questions.jsonl --top-k 5 10 15
