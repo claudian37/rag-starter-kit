@@ -168,7 +168,11 @@ async def retrieve_relevant_documents(
     except Exception as e:
         error_msg = str(e).lower()
         print(f"   ❌ ERROR in retrieval: {e}")
-        if "invalid_api_key" in error_msg:
+        if (
+            "invalid_api_key" in error_msg
+            or "incorrect api key" in error_msg
+            or "incorrect_api_key" in error_msg
+        ):
             st.error("❌ **Invalid OpenAI API key**\n\nGet a new key from https://platform.openai.com/api-keys")
         elif "insufficient_quota" in error_msg or "billing" in error_msg:
             st.error("❌ **OpenAI account has insufficient quota**\n\nAdd a payment method at https://platform.openai.com/account/billing")
