@@ -47,15 +47,16 @@ async def retrieve_documents(
     Retrieve relevant documents using vector similarity search.
 
     Uses cosine similarity (via pgvector) to find semantically similar documents.
-    Applies app-side similarity filtering and falls back to top N results when
-    no documents meet the threshold.
+    Passes similarity_threshold to the RPC; if the RPC filters server-side, we
+    also filter in Python for consistency. Falls back to top N when no documents
+    meet the threshold (only possible when RPC returns unfiltered candidates).
 
     Args:
         supabase: Supabase client
         openai_client: OpenAI client
         query: User query text
         max_results: Maximum number of results to return
-        similarity_threshold: Minimum similarity score (0-1)
+        similarity_threshold: Minimum similarity score (0-1) for Python filtering
         fallback_limit: When no results meet threshold, return this many anyway
         verbose: If True, print progress (for app); False for benchmark
 

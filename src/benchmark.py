@@ -141,24 +141,21 @@ async def run_benchmark(
     max_k = max(top_k_values)
     max_retries = 3
     retry_delays = [1.0, 2.0, 4.0]
-    sem = asyncio.Semaphore(concurrency)
 
     async def fetch_one(item: dict, index: int) -> tuple[int, list[str] | None, str | None]:
         """Retrieve for one item with retry; returns (index, preds, chunk_id) or (index, None, None) on skip."""
         for attempt in range(max_retries):
             try:
-                async with sem:
-                    preds = await retrieve(
-                        supabase,
-                        openai_client,
-                        item["question"],
-                        top_k=max_k,
-                        similarity_threshold=similarity_threshold,
-                    )
+                preds = await retrieve(
+                    supabase,
+                    openai_client,
+                    item["question"],
+                    top_k=max_k,
+                    similarity_threshold=similarity_threshold,
+                )
                 return (index, preds, item["chunk_id"])
             except Exception as e:
                 if attempt < max_retries - 1:
-                    # Semaphore released on exception before except block; sleep without holding slot
                     await asyncio.sleep(retry_delays[attempt])
                 else:
                     print(f"   ⚠️ Skipped item {index + 1} after {max_retries} attempts: {e}")
@@ -242,6 +239,11 @@ def bootstrap_confidence_intervals(
     When n < 2, bootstrap cannot produce meaningful intervals. Returns (mean, 0.0, 0.0)
     for a single score, or (0.0, 0.0, 0.0) for empty input.
     """
+    if n_samples < 1:
+        raise ValueError("n_samples must be >= 1")
+    if not (0 < ci < 1):
+        raise ValueError("ci must be in (0, 1)")
+
     n = len(per_question_scores)
     if n < 2:
         return per_question_scores[0] if per_question_scores else 0.0, 0.0, 0.0
@@ -324,6 +326,10 @@ if __name__ == "__main__":
         help="Max concurrent retrieval requests (default: 5)",
     )
     args = parser.parse_args()
+
+    if args.bootstrap and args.bootstrap_samples < 1:
+        print("❌ --bootstrap-samples must be >= 1")
+        sys.exit(1)
 
     metrics = asyncio.run(
         run_benchmark(

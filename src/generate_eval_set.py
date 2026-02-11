@@ -112,6 +112,13 @@ async def main(
     data_dir: Path,
     batch_size: int = 100,
 ):
+    if num_per_chunk <= 0:
+        print("❌ --num-per-chunk must be positive")
+        sys.exit(1)
+    if batch_size <= 0:
+        print("❌ --batch-size must be positive")
+        sys.exit(1)
+
     data_dir = data_dir.resolve()
     if not data_dir.exists():
         print(f"❌ Data directory not found: {data_dir}")
