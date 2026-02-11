@@ -108,6 +108,7 @@ async def main(
     output_path: Path,
     num_per_chunk: int,
     data_dir: Path,
+    batch_size: int = 100,
 ):
     data_dir = data_dir.resolve()
     if not data_dir.exists():
@@ -135,21 +136,29 @@ async def main(
             constraint = random.choice(DIVERSITY_CONSTRAINTS)
             tasks.append((chunk_id, text, constraint))
 
-    # Run concurrent generations (semaphore caps to avoid rate limits)
+    # Process in batches to bound memory (avoids creating all coros upfront)
     sem = asyncio.Semaphore(10)
 
     async def generate_with_sem(chunk_id: str, text: str, constraint: str):
         async with sem:
             return await generate_question_for_chunk(client, text, chunk_id, constraint)
 
-    print(f"   Generating {len(tasks)} questions (10 concurrent)...")
-    coros = [generate_with_sem(cid, t, c) for cid, t, c in tasks]
-    raw_results = await asyncio.gather(*coros)
-    results = [r for r in raw_results if r is not None]
+    results = []
+    total = len(tasks)
+    print(f"   Generating {total} questions (batch size {batch_size}, 10 concurrent)...")
 
     with open(output_path, "w", encoding="utf-8") as f:
-        for item in results:
-            f.write(json.dumps(item) + "\n")
+        for i in range(0, total, batch_size):
+            batch = tasks[i : i + batch_size]
+            coros = [generate_with_sem(cid, t, c) for cid, t, c in batch]
+            raw_results = await asyncio.gather(*coros)
+            batch_results = [r for r in raw_results if r is not None]
+            results.extend(batch_results)
+            for item in batch_results:
+                f.write(json.dumps(item) + "\n")
+            done = min(i + batch_size, total)
+            if done % 500 == 0 or done == total:
+                print(f"   ... {done}/{total} done")
 
     print(f"✅ Wrote {len(results)} question–chunk pairs to {output_path}")
 
@@ -174,6 +183,12 @@ if __name__ == "__main__":
         default=Path("data"),
         help="Directory containing markdown files (same as ingest)",
     )
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=100,
+        help="Process this many tasks per batch (bounds memory for large datasets)",
+    )
     args = parser.parse_args()
 
-    asyncio.run(main(args.output, args.num_per_chunk, args.data_dir))
+    asyncio.run(main(args.output, args.num_per_chunk, args.data_dir, args.batch_size))

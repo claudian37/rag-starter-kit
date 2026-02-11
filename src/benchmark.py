@@ -25,7 +25,8 @@ from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from supabase import create_client
 
-from config import EMBEDDING_MODEL, MINIMUM_SIMILARITY_THRESHOLD
+from config import MINIMUM_SIMILARITY_THRESHOLD
+from retrieval import build_chunk_id, retrieve_documents
 
 load_dotenv()
 
@@ -58,22 +59,9 @@ def calculate_mrr(predictions: list[str], ground_truth: list[str]) -> float:
     return mrr
 
 
-def build_chunk_id(row: dict) -> str:
-    """Build chunk_id from Supabase row (url + chunk_number)."""
-    url = row.get("url", "")
-    chunk_num = row.get("chunk_number", 0)
-    return f"{url}|{chunk_num}"
-
-
 # ---------------------------------------------------------------------------
-# Retrieval (mirrors app.py)
+# Retrieval (shared with app.py via retrieval.py)
 # ---------------------------------------------------------------------------
-
-
-async def get_embedding(text: str, client: AsyncOpenAI) -> list[float]:
-    """Generate embedding for query."""
-    resp = await client.embeddings.create(model=EMBEDDING_MODEL, input=text)
-    return resp.data[0].embedding
 
 
 async def retrieve(
@@ -85,23 +73,18 @@ async def retrieve(
 ) -> list[str]:
     """
     Run retrieval and return list of chunk_ids (url|chunk_number) in rank order.
+    Uses shared retrieval logic so benchmark results reflect production behavior.
     """
-    query_embedding = await get_embedding(question, openai_client)
-    result = supabase.rpc(
-        "match_documents",
-        {
-            "query_embedding": query_embedding,
-            "match_count": top_k * 2,
-            "similarity_threshold": similarity_threshold,
-            "filter_source": None,
-        },
-    ).execute()
-
-    if not result.data:
-        return []
-
-    chunk_ids = [build_chunk_id(row) for row in result.data]
-    return chunk_ids[:top_k]
+    docs = await retrieve_documents(
+        supabase,
+        openai_client,
+        question,
+        max_results=top_k,
+        similarity_threshold=similarity_threshold,
+        fallback_limit=2,
+        verbose=False,
+    )
+    return [build_chunk_id(row) for row in docs]
 
 
 # ---------------------------------------------------------------------------
