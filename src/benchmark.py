@@ -103,11 +103,17 @@ async def run_benchmark(
         sys.exit(1)
 
     eval_items = []
-    with open(eval_path, "r", encoding="utf-8") as f:
-        for line in f:
+        for line_number, line in enumerate(f, start=1):
             line = line.strip()
-            if line:
+            if not line:
+                continue
+            try:
                 eval_items.append(json.loads(line))
+            except json.JSONDecodeError as e:
+                print(
+                    f"⚠️ Skipping malformed JSON on line {line_number} in {eval_path}: {e}"
+                )
+                continue
 
     if not eval_items:
         print(f"⚠️ No eval items in {eval_path}")
