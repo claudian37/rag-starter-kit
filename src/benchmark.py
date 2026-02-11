@@ -102,6 +102,7 @@ async def run_benchmark(
         sys.exit(1)
 
     eval_items = []
+    with open(eval_path, "r", encoding="utf-8") as f:
         for line_number, line in enumerate(f, start=1):
             line = line.strip()
             if not line:
