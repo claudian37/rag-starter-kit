@@ -25,13 +25,13 @@ from supabase import create_client, Client
 # Import configuration
 from config import (
     APP_NAME,
-    EMBEDDING_MODEL,
     LLM_MODEL,
     LLM_TEMPERATURE,
     LLM_MAX_TOKENS,
     MINIMUM_SIMILARITY_THRESHOLD,
     MAX_SOURCES,
 )
+from retrieval import retrieve_documents
 
 load_dotenv()
 
@@ -138,33 +138,6 @@ def init_clients() -> Tuple[Client, Optional[AsyncOpenAI]]:
     return supabase, openai_client
 
 
-async def get_embedding(text: str, openai_client: AsyncOpenAI) -> List[float]:
-    """
-    Generate embedding vector for query text.
-    
-    Uses the same embedding model as configured for document ingestion to ensure
-    semantic similarity works correctly.
-    """
-    try:
-        response = await openai_client.embeddings.create(
-            model=EMBEDDING_MODEL,
-            input=text
-        )
-        return response.data[0].embedding
-    except Exception as e:
-        error_msg = str(e).lower()
-        print(f"   ❌ ERROR generating embedding: {e}")
-        if "invalid_api_key" in error_msg:
-            st.error("❌ **Invalid OpenAI API key**\n\nGet a new key from https://platform.openai.com/api-keys")
-        elif "insufficient_quota" in error_msg or "billing" in error_msg:
-            st.error("❌ **OpenAI account has insufficient quota**\n\nAdd a payment method at https://platform.openai.com/account/billing")
-        elif "rate_limit" in error_msg:
-            st.warning("⚠️ **OpenAI rate limit exceeded**\n\nWait a few minutes and try again")
-        else:
-            st.error(f"❌ **Error generating embedding:** {e}")
-        return [0.0] * 1536
-
-
 async def retrieve_relevant_documents(
     supabase: Client,
     openai_client: AsyncOpenAI,
@@ -174,86 +147,48 @@ async def retrieve_relevant_documents(
 ) -> List[Dict]:
     """
     Retrieve relevant documents using vector similarity search.
-    
-    Uses cosine similarity (via pgvector) to find semantically similar documents.
-    The threshold filters out irrelevant results - lower values return more results
-    but with lower quality. Higher values are more strict but may miss relevant
-    documents with different wording.
-    
-    Args:
-        supabase: Supabase client
-        openai_client: OpenAI client
-        query: User query text
-        max_results: Maximum number of results to return
-        similarity_threshold: Minimum similarity score (0-1)
-    
-    Returns:
-        List of relevant documents with similarity scores
+
+    Uses shared retrieval logic (retrieval.py) for consistency with benchmark.
     """
     try:
-        # Generate query embedding
         print(f"   Generating query embedding...")
-        query_embedding = await get_embedding(query, openai_client)
-        print(f"   Query embedding generated ({len(query_embedding)} dimensions)")
-        
-        # Call the match_documents function
-        # Using an RPC function encapsulates the SQL logic and allows parameterized queries
-        try:
-            print(f"   Searching database (threshold: {similarity_threshold})...")
-            result = supabase.rpc(
-                "match_documents",
-                {
-                    "query_embedding": query_embedding,
-                    "match_count": max_results * 2,  # Get more, filter by threshold
-                    "similarity_threshold": similarity_threshold,
-                    "filter_source": None,
-                }
-            ).execute()
-        except Exception as e:
-            error_msg = str(e).lower()
-            if "function" in error_msg and "does not exist" in error_msg:
-                st.error(
-                    "❌ **Function 'match_documents' does not exist**\n\n"
-                    "**Fix:** See Step 1.2 Schema in the paid Substack guide to set up the database schema."
-                )
-            elif "vector" in error_msg and "does not exist" in error_msg:
-                st.error(
-                    "❌ **pgvector extension not enabled**\n\n"
-                    "**Fix:** See Step 1.2 Schema in the paid Substack guide to set up the database schema."
-                )
-            else:
-                st.error(
-                    f"❌ **Error calling match_documents:** {e}\n\n"
-                    "**Fix:** See Step 1.2 Schema in the paid Substack guide to set up the database schema."
-                )
-            return []
-        
-        if not result.data:
-            print(f"   ⚠️ Database returned no results")
-            return []
-        
-        print(f"   Database returned {len(result.data)} candidate(s)")
-        
-        # Filter by threshold and limit results
-        filtered = [
-            doc for doc in result.data
-            if doc.get("similarity", 0) >= similarity_threshold
-        ]
-        
-        # If no results meet threshold, return top 2 anyway
-        # Sometimes queries are novel and don't match well. Returning low-similarity
-        # results is better than no results, but we limit to 2 to avoid overwhelming
-        # the user with irrelevant content.
-        if not filtered and result.data:
-            print(f"   ⚠️ No results above threshold ({similarity_threshold}), returning top 2 anyway")
-            return result.data[:2]
-        
-        print(f"   {len(filtered)} document(s) passed similarity threshold")
-        return filtered[:max_results]
-        
+        print(f"   Searching database (threshold: {similarity_threshold})...")
+        docs = await retrieve_documents(
+            supabase,
+            openai_client,
+            query,
+            max_results=max_results,
+            similarity_threshold=similarity_threshold,
+            verbose=True,
+        )
+        if docs:
+            print(f"   Retrieved {len(docs)} document(s) for the query")
+        return docs
     except Exception as e:
-        # Error already handled in get_embedding or RPC call
+        error_msg = str(e).lower()
         print(f"   ❌ ERROR in retrieval: {e}")
+        if (
+            "invalid_api_key" in error_msg
+            or "incorrect api key" in error_msg
+            or "incorrect_api_key" in error_msg
+        ):
+            st.error("❌ **Invalid OpenAI API key**\n\nGet a new key from https://platform.openai.com/api-keys")
+        elif "insufficient_quota" in error_msg or "billing" in error_msg:
+            st.error("❌ **OpenAI account has insufficient quota**\n\nAdd a payment method at https://platform.openai.com/account/billing")
+        elif "rate_limit" in error_msg:
+            st.warning("⚠️ **OpenAI rate limit exceeded**\n\nWait a few minutes and try again")
+        elif "function" in error_msg and "does not exist" in error_msg:
+            st.error(
+                "❌ **Function 'match_documents' does not exist**\n\n"
+                "**Fix:** See Step 1.2 Schema in the paid Substack guide to set up the database schema."
+            )
+        elif "vector" in error_msg and "does not exist" in error_msg:
+            st.error(
+                "❌ **pgvector extension not enabled**\n\n"
+                "**Fix:** See Step 1.2 Schema in the paid Substack guide to set up the database schema."
+            )
+        else:
+            st.error(f"❌ **Error:** {e}\n\nCheck the console for details.")
         return []
 
 

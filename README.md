@@ -103,9 +103,12 @@ rag-starter-kit/
 │   ├── app.py              # Streamlit chat UI + RAG logic
 │   ├── ingest.py           # Data processing script
 │   ├── parse_substack.py   # Substack RSS/HTML parsing
+│   ├── generate_eval_set.py # Synthetic question generation for benchmarking
+│   ├── benchmark.py        # Recall@K, MRR@K retrieval benchmark
 │   ├── config.py           # Configuration
 │   └── validate_setup.py   # Setup validation
 ├── data/                    # Your Markdown files go here
+├── data/eval/               # Eval set (questions.jsonl) from generate_eval_set.py
 ├── requirements.txt
 ├── Dockerfile
 ├── Procfile
@@ -152,6 +155,38 @@ python src/ingest.py
 **Proof to capture during testing:**
 - Raw RSS content vs cleaned text (before/after)
 - A citation mismatch example, then the fixed citation after re-ingest
+
+---
+
+## 📊 Evaluation & Benchmarking
+
+**Measure before improving.** Without metrics, you can’t tell if changes help or hurt. This workflow establishes a baseline and lets you quantify the impact of retrieval upgrades (e.g. hybrid search, re-ranking).
+
+**Workflow:**
+
+1. **Generate synthetic eval set** – LLM-generated questions from your chunks:
+   ```
+   python src/generate_eval_set.py
+   python src/generate_eval_set.py --num-per-chunk 2 --output data/eval/questions.jsonl
+   ```
+
+2. **Run benchmark** – Compute Recall@K and MRR@K:
+   ```
+   python src/benchmark.py
+   python src/benchmark.py --eval-file data/eval/questions.jsonl --top-k 3 5 10 15
+   ```
+
+**Metrics:**
+- **Recall@K** – % of questions where the correct chunk appears in the top-K results
+- **MRR@K** – Mean Reciprocal Rank (how high the correct chunk ranks on average)
+
+**Usage:** Run the benchmark before and after any retrieval change (chunking, embeddings, hybrid search, re-ranking). Compare metrics to make data-driven decisions.
+
+**Bootstrap confidence intervals:**
+```
+python src/benchmark.py --bootstrap
+python src/benchmark.py --bootstrap --bootstrap-samples 2000
+```
 
 ---
 

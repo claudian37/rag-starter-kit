@@ -31,5 +31,12 @@ data/*.markdown
 # Logs
 *.log
 
-# Local scripts
+# Local
 src/verify_substack_ingest.py
+.env
+data/*.md
+data/*.markdown
+data/**/*.md
+data/**/*.markdown
+!data/example.md
+data/eval/*
