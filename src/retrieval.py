@@ -22,8 +22,10 @@ async def get_embedding(text: str, openai_client: AsyncOpenAI) -> List[float]:
             input=text,
         )
     except OpenAIError as e:
-        # Wrap OpenAI-specific errors to provide clearer context to callers.
-        raise RuntimeError("Failed to generate embedding from OpenAI API") from e
+        # Wrap OpenAI-specific errors, but include original message so callers
+        # (e.g., app.py) can still inspect substrings like "invalid_api_key"
+        # or "rate_limit" for targeted error handling.
+        raise RuntimeError(f"Failed to generate embedding from OpenAI API: {e}") from e
 
     # Basic defensive check in case the API response is unexpectedly empty.
     if not getattr(response, "data", None):
