@@ -93,7 +93,8 @@ def load_chunks_from_data_dir(data_dir: Path) -> list[tuple[str, str]]:
     """
     Load and chunk markdown files the same way ingest.py does.
     Returns list of (chunk_id, chunk_text).
-    chunk_id format: filename|chunk_N for matching with Supabase (url + chunk_number).
+    chunk_id format: file://{filename}|{chunk_index} (url|chunk_number) to match
+    Supabase ingest and benchmark ground-truth construction.
     """
     chunks = []
     for path in sorted(data_dir.glob("*.md")) + sorted(data_dir.glob("*.markdown")):
