@@ -9,17 +9,25 @@ results reflect production retrieval behavior.
 
 from typing import Any, List
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, OpenAIError
 
 from config import EMBEDDING_MODEL
 
 
 async def get_embedding(text: str, openai_client: AsyncOpenAI) -> List[float]:
     """Generate embedding for query text using configured model."""
-    response = await openai_client.embeddings.create(
-        model=EMBEDDING_MODEL,
-        input=text,
-    )
+    try:
+        response = await openai_client.embeddings.create(
+            model=EMEDDING_MODEL,
+            input=text,
+        )
+    except OpenAIError as e:
+        # Wrap OpenAI-specific errors to provide clearer context to callers.
+        raise RuntimeError("Failed to generate embedding from OpenAI API") from e
+
+    # Basic defensive check in case the API response is unexpectedly empty.
+    if not getattr(response, "data", None):
+        raise RuntimeError("OpenAI embedding API returned an empty response")
     return response.data[0].embedding
 
 
