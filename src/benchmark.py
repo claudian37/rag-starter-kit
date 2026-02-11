@@ -94,6 +94,7 @@ async def run_benchmark(
     eval_path: Path,
     top_k_values: list[int],
     similarity_threshold: float,
+    concurrency: int = 5,
 ) -> dict:
     """Run benchmark and return metrics."""
     if not eval_path.exists():
@@ -123,41 +124,46 @@ async def run_benchmark(
     supabase = create_client(supabase_url, supabase_key)
     openai_client = AsyncOpenAI(api_key=openai_key)
 
-    print(f"📊 Benchmarking {len(eval_items)} questions (top_k: {top_k_values})")
+    max_k = max(top_k_values)
+    max_retries = 3
+    retry_delays = [1.0, 2.0, 4.0]
+    sem = asyncio.Semaphore(concurrency)
+
+    async def fetch_one(item: dict, index: int) -> tuple[list[str] | None, str | None]:
+        """Retrieve for one item with retry; returns (preds, chunk_id) or (None, None) on skip."""
+        async with sem:
+            for attempt in range(max_retries):
+                try:
+                    preds = await retrieve(
+                        supabase,
+                        openai_client,
+                        item["question"],
+                        top_k=max_k,
+                        similarity_threshold=similarity_threshold,
+                    )
+                    return (preds, item["chunk_id"])
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(retry_delays[attempt])
+                    else:
+                        print(f"   ⚠️ Skipped item {index + 1} after {max_retries} attempts: {e}")
+                        return (None, None)
+
+    print(f"📊 Benchmarking {len(eval_items)} questions (top_k: {top_k_values}, {concurrency} concurrent)")
     print("-" * 50)
 
-    # Collect predictions for max(top_k) to avoid redundant retrieval
-    max_k = max(top_k_values)
+    coros = [fetch_one(item, i) for i, item in enumerate(eval_items)]
+    results = await asyncio.gather(*coros)
+
     all_predictions: list[list[str]] = []
     ground_truths: list[list[str]] = []
     skipped = 0
-    max_retries = 3
-    retry_delays = [1.0, 2.0, 4.0]  # exponential backoff in seconds
-
-    for i, item in enumerate(eval_items):
-        for attempt in range(max_retries):
-            try:
-                preds = await retrieve(
-                    supabase,
-                    openai_client,
-                    item["question"],
-                    top_k=max_k,
-                    similarity_threshold=similarity_threshold,
-                )
-                all_predictions.append(preds)
-                ground_truths.append([item["chunk_id"]])
-                break
-            except Exception as e:
-                if attempt < max_retries - 1:
-                    delay = retry_delays[attempt]
-                    print(f"   ⚠️ Retry {attempt + 1}/{max_retries} after error: {e}")
-                    await asyncio.sleep(delay)
-                else:
-                    print(f"   ⚠️ Skipped item {i + 1} after {max_retries} attempts: {e}")
-                    skipped += 1
-        if (i + 1) % 10 == 0:
-            print(f"   Retrieved {i + 1}/{len(eval_items)}...")
-        await asyncio.sleep(0.05)
+    for (preds, chunk_id) in results:
+        if preds is not None:
+            all_predictions.append(preds)
+            ground_truths.append([chunk_id])
+        else:
+            skipped += 1
 
     if skipped:
         print(f"   ⚠️ {skipped} item(s) skipped due to errors (metrics exclude them)")
@@ -267,6 +273,12 @@ if __name__ == "__main__":
         default=1000,
         help="Number of bootstrap samples (default: 1000)",
     )
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=5,
+        help="Max concurrent retrieval requests (default: 5)",
+    )
     args = parser.parse_args()
 
     metrics = asyncio.run(
@@ -274,6 +286,7 @@ if __name__ == "__main__":
             args.eval_file,
             args.top_k,
             args.similarity_threshold,
+            args.concurrency,
         )
     )
     print_results(metrics, bootstrap=args.bootstrap, n_samples=args.bootstrap_samples)
