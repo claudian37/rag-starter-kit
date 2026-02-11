@@ -1,0 +1,23 @@
+src/benchmark.py
+  a1ebcae903176b85 105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "9d3f0cd59a39411a35cb96a9c51b5ed294312f0f",
+  "prompts": {
+    "a1ebcae903176b85": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "7a73faf7-4b9c-4edc-af7e-547b97a98b8d",
+        "model": "composer-1.5"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 0,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
