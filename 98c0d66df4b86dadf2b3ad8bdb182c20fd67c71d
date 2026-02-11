@@ -1,0 +1,27 @@
+src/retrieval.py
+  a1ebcae903176b85 50-52,59
+src/benchmark.py
+  a1ebcae903176b85 242-246,330-333
+src/generate_eval_set.py
+  a1ebcae903176b85 115-121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "98c0d66df4b86dadf2b3ad8bdb182c20fd67c71d",
+  "prompts": {
+    "a1ebcae903176b85": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "7a73faf7-4b9c-4edc-af7e-547b97a98b8d",
+        "model": "composer-1.5"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 33,
+      "total_deletions": 19,
+      "accepted_lines": 21,
+      "overriden_lines": 0
+    }
+  }
+}
