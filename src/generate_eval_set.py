@@ -13,6 +13,7 @@ Output: JSONL file with {question, chunk_id, chunk} (chunk truncated to 500 char
 
 import argparse
 import asyncio
+import io
 import json
 import os
 import random
@@ -69,8 +70,13 @@ Respond with a JSON object: {{"question": "your question here"}}"""
         )
         content = resp.choices[0].message.content.strip()
         data = json.loads(content)
+        question = data.get("question") if isinstance(data, dict) else None
+        if not question or not isinstance(question, str):
+            raise ValueError(
+                f"LLM response missing or invalid 'question' key: {list(data.keys()) if isinstance(data, dict) else type(data)}"
+            )
         return {
-            "question": data["question"],
+            "question": question,
             "chunk_id": chunk_id,
             "chunk": chunk_content[:500],  # Store truncated for reference
         }
@@ -134,7 +140,10 @@ async def main(
             return await generate_question_for_chunk(client, text, chunk_id, constraint)
 
     async def process_batch(
-        current_batch: list[tuple[str, str, str]], pbar: tqdm, written_count: int
+        current_batch: list[tuple[str, str, str]],
+        out: io.TextIOBase,
+        pbar: tqdm,
+        written_count: int,
     ) -> int:
         if not current_batch:
             return written_count
@@ -146,7 +155,7 @@ async def main(
             result = await coro
             pbar.update(1)
             if result is not None:
-                f.write(json.dumps(result) + "\n")
+                out.write(json.dumps(result) + "\n")
                 written_count += 1
         return written_count
 
@@ -160,10 +169,10 @@ async def main(
                     constraint = random.choice(DIVERSITY_CONSTRAINTS)
                     batch.append((chunk_id, text, constraint))
                     if len(batch) >= batch_size:
-                        written = await process_batch(batch, pbar, written)
+                        written = await process_batch(batch, f, pbar, written)
                         batch = []
             if batch:
-                written = await process_batch(batch, pbar, written)
+                written = await process_batch(batch, f, pbar, written)
 
     print(f"✅ Wrote {written} question–chunk pairs to {output_path}")
 

@@ -73,6 +73,8 @@ async def retrieve(
     """
     Run retrieval and return list of chunk_ids (url|chunk_number) in rank order.
     Uses shared retrieval logic so benchmark results reflect production behavior.
+    Retrieval includes fallback behavior (returning top results when none meet
+    threshold), so metrics reflect production retrieval rather than strict similarity.
     """
     docs = await retrieve_documents(
         supabase,
@@ -109,10 +111,15 @@ async def run_benchmark(
             if not line:
                 continue
             try:
-                eval_items.append(json.loads(line))
-            except json.JSONDecodeError as e:
+                item = json.loads(line)
+                if not isinstance(item, dict):
+                    raise ValueError("expected JSON object")
+                if "question" not in item or "chunk_id" not in item:
+                    raise ValueError("missing required keys: question, chunk_id")
+                eval_items.append(item)
+            except (json.JSONDecodeError, ValueError) as e:
                 print(
-                    f"⚠️ Skipping malformed JSON on line {line_number} in {eval_path}: {e}"
+                    f"⚠️ Skipping malformed item on line {line_number} in {eval_path}: {e}"
                 )
                 continue
 
@@ -151,6 +158,7 @@ async def run_benchmark(
                 return (index, preds, item["chunk_id"])
             except Exception as e:
                 if attempt < max_retries - 1:
+                    # Semaphore released on exception before except block; sleep without holding slot
                     await asyncio.sleep(retry_delays[attempt])
                 else:
                     print(f"   ⚠️ Skipped item {index + 1} after {max_retries} attempts: {e}")
