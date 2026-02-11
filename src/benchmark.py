@@ -129,22 +129,44 @@ async def run_benchmark(
     # Collect predictions for max(top_k) to avoid redundant retrieval
     max_k = max(top_k_values)
     all_predictions: list[list[str]] = []
+    ground_truths: list[list[str]] = []
+    skipped = 0
+    max_retries = 3
+    retry_delays = [1.0, 2.0, 4.0]  # exponential backoff in seconds
 
     for i, item in enumerate(eval_items):
-        preds = await retrieve(
-            supabase,
-            openai_client,
-            item["question"],
-            top_k=max_k,
-            similarity_threshold=similarity_threshold,
-        )
-        all_predictions.append(preds)
+        for attempt in range(max_retries):
+            try:
+                preds = await retrieve(
+                    supabase,
+                    openai_client,
+                    item["question"],
+                    top_k=max_k,
+                    similarity_threshold=similarity_threshold,
+                )
+                all_predictions.append(preds)
+                ground_truths.append([item["chunk_id"]])
+                break
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    delay = retry_delays[attempt]
+                    print(f"   ⚠️ Retry {attempt + 1}/{max_retries} after error: {e}")
+                    await asyncio.sleep(delay)
+                else:
+                    print(f"   ⚠️ Skipped item {i + 1} after {max_retries} attempts: {e}")
+                    skipped += 1
         if (i + 1) % 10 == 0:
             print(f"   Retrieved {i + 1}/{len(eval_items)}...")
         await asyncio.sleep(0.05)
 
+    if skipped:
+        print(f"   ⚠️ {skipped} item(s) skipped due to errors (metrics exclude them)")
+
+    if not all_predictions:
+        print("❌ No successful retrievals; cannot compute metrics")
+        sys.exit(1)
+
     # Compute per-question scores for each k
-    ground_truths = [[item["chunk_id"]] for item in eval_items]
     metrics = {}
     bootstrap_data: dict[str, list[float]] = {}
 
