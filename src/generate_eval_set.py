@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
-from config import EMBEDDING_MODEL, LLM_MODEL
+from config import LLM_MODEL
 from ingest import chunk_text
 
 load_dotenv()
