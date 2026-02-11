@@ -1,0 +1,25 @@
+README.md
+  a1ebcae903176b85 106
+src/generate_eval_set.py
+  a1ebcae903176b85 13,29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.2",
+  "base_commit_sha": "f9b93364d6a19f10f6e6e20a3d8f66bee3efb54b",
+  "prompts": {
+    "a1ebcae903176b85": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "7a73faf7-4b9c-4edc-af7e-547b97a98b8d",
+        "model": "composer-1.5"
+      },
+      "human_author": "claudian37 <claudian37@gmail.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 3,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
