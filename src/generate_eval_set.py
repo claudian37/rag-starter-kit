@@ -6,7 +6,7 @@ questions that can be answered by each chunk. Run this AFTER ingesting your data
 
 Usage:
     python src/generate_eval_set.py
-    python src/generate_eval_set.py --num-per-chunk 2 --output eval/questions.jsonl
+    python src/generate_eval_set.py --num-per-chunk 2 --output data/eval/questions.jsonl
 
 Output: JSONL file with {question, chunk_id, chunk} (chunk truncated to 500 characters) for benchmark.py
 """
