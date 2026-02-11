@@ -226,6 +226,9 @@ def bootstrap_confidence_intervals(
     alpha = 1 - ci
     lo_idx = int(n_samples * (alpha / 2))
     hi_idx = int(n_samples * (1 - alpha / 2))
+    # Clamp indices to valid range to avoid IndexError for edge-case ci values
+    lo_idx = max(0, min(lo_idx, n_samples - 1))
+    hi_idx = max(0, min(hi_idx, n_samples - 1))
     mean = sum(per_question_scores) / n
     return mean, bootstrap_means[lo_idx], bootstrap_means[hi_idx]
 
