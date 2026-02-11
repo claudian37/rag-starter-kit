@@ -163,7 +163,7 @@ async def retrieve_relevant_documents(
             verbose=True,
         )
         if docs:
-            print(f"   Query embedding generated ({len(docs)} document(s) retrieved)")
+            print(f"   Retrieved {len(docs)} document(s) for the query")
         return docs
     except Exception as e:
         error_msg = str(e).lower()
