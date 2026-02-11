@@ -18,7 +18,7 @@ async def get_embedding(text: str, openai_client: AsyncOpenAI) -> List[float]:
     """Generate embedding for query text using configured model."""
     try:
         response = await openai_client.embeddings.create(
-            model=EMEDDING_MODEL,
+            model=EMBEDDING_MODEL,
             input=text,
         )
     except OpenAIError as e:
