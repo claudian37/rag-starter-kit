@@ -2,9 +2,9 @@
 Shared retrieval logic for app and benchmark.
 
 Runs vector similarity search via Supabase match_documents RPC, with app-side
-similarity filtering and fallback behavior (return top 2 when no results
-meet threshold). Used by both app.py and benchmark.py to ensure benchmark
-results reflect production retrieval behavior.
+similarity filtering and fallback behavior (returning a configurable number
+of top results when no results meet threshold). Used by both app.py and
+benchmark.py to ensure benchmark results reflect production retrieval behavior.
 """
 
 from typing import Any, List
