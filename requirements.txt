@@ -12,3 +12,6 @@ requests==2.32.3
 
 # Async Support (required for Streamlit async operations)
 nest-asyncio==1.6.0
+
+# Progress bars for eval generation and benchmark
+tqdm==4.67.1

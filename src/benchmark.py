@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 from supabase import create_client
+from tqdm import tqdm
 
 from config import MINIMUM_SIMILARITY_THRESHOLD
 from retrieval import build_chunk_id, retrieve_documents
@@ -135,11 +136,11 @@ async def run_benchmark(
     retry_delays = [1.0, 2.0, 4.0]
     sem = asyncio.Semaphore(concurrency)
 
-    async def fetch_one(item: dict, index: int) -> tuple[list[str] | None, str | None]:
-        """Retrieve for one item with retry; returns (preds, chunk_id) or (None, None) on skip."""
-        async with sem:
-            for attempt in range(max_retries):
-                try:
+    async def fetch_one(item: dict, index: int) -> tuple[int, list[str] | None, str | None]:
+        """Retrieve for one item with retry; returns (index, preds, chunk_id) or (index, None, None) on skip."""
+        for attempt in range(max_retries):
+            try:
+                async with sem:
                     preds = await retrieve(
                         supabase,
                         openai_client,
@@ -147,19 +148,29 @@ async def run_benchmark(
                         top_k=max_k,
                         similarity_threshold=similarity_threshold,
                     )
-                    return (preds, item["chunk_id"])
-                except Exception as e:
-                    if attempt < max_retries - 1:
-                        await asyncio.sleep(retry_delays[attempt])
-                    else:
-                        print(f"   ⚠️ Skipped item {index + 1} after {max_retries} attempts: {e}")
-                        return (None, None)
+                return (index, preds, item["chunk_id"])
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delays[attempt])
+                else:
+                    print(f"   ⚠️ Skipped item {index + 1} after {max_retries} attempts: {e}")
+                    return (index, None, None)
 
     print(f"📊 Benchmarking {len(eval_items)} questions (top_k: {top_k_values}, {concurrency} concurrent)")
     print("-" * 50)
 
-    coros = [fetch_one(item, i) for i, item in enumerate(eval_items)]
-    results = await asyncio.gather(*coros)
+    tasks = [
+        asyncio.create_task(fetch_one(item, i)) for i, item in enumerate(eval_items)
+    ]
+    results = [None] * len(eval_items)
+    for coro in tqdm(
+        asyncio.as_completed(tasks),
+        total=len(eval_items),
+        desc="Retrieving",
+        unit="q",
+    ):
+        index, preds, chunk_id = await coro
+        results[index] = (preds, chunk_id)
 
     all_predictions: list[list[str]] = []
     ground_truths: list[list[str]] = []

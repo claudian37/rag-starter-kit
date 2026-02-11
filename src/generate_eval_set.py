@@ -16,7 +16,6 @@ import asyncio
 import json
 import os
 import random
-import re
 import sys
 from pathlib import Path
 
@@ -24,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
+from tqdm import tqdm
 
 from config import LLM_MODEL
 from ingest import chunk_text
@@ -38,16 +38,6 @@ DIVERSITY_CONSTRAINTS = [
     "Use colloquial or shorthand phrasing (e.g. abbreviations, casual tone) as a real user might type.",
     "Reframe the question (e.g. from 'what is X' to 'why does X happen', or from beginner to expert lens).",
 ]
-
-
-def _extract_json_from_response(content: str) -> str:
-    """Extract JSON from LLM response, handling markdown code blocks."""
-    content = content.strip()
-    # Strip ```json or ``` code block wrappers
-    match = re.search(r"```(?:json)?\s*\n?([\s\S]*?)\n?```", content)
-    if match:
-        return match.group(1).strip()
-    return content
 
 
 async def generate_question_for_chunk(
@@ -75,9 +65,9 @@ Respond with a JSON object: {{"question": "your question here"}}"""
         resp = await client.chat.completions.create(
             model=LLM_MODEL,
             messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
         )
         content = resp.choices[0].message.content.strip()
-        content = _extract_json_from_response(content)
         data = json.loads(content)
         return {
             "question": data["question"],
@@ -144,35 +134,36 @@ async def main(
             return await generate_question_for_chunk(client, text, chunk_id, constraint)
 
     async def process_batch(
-        current_batch: list[tuple[str, str, str]], done_count: int, written_count: int
-    ) -> tuple[int, int]:
+        current_batch: list[tuple[str, str, str]], pbar: tqdm, written_count: int
+    ) -> int:
         if not current_batch:
-            return done_count, written_count
-        coros = [generate_with_sem(cid, t, c) for cid, t, c in current_batch]
-        raw_results = await asyncio.gather(*coros)
-        batch_results = [r for r in raw_results if r is not None]
-        for item in batch_results:
-            f.write(json.dumps(item) + "\n")
-        done_count += len(current_batch)
-        written_count += len(batch_results)
-        if done_count % 500 == 0 or done_count == total:
-            print(f"   ... {done_count}/{total} done")
-        return done_count, written_count
+            return written_count
+        tasks = [
+            asyncio.create_task(generate_with_sem(cid, t, c))
+            for cid, t, c in current_batch
+        ]
+        for coro in asyncio.as_completed(tasks):
+            result = await coro
+            pbar.update(1)
+            if result is not None:
+                f.write(json.dumps(result) + "\n")
+                written_count += 1
+        return written_count
 
-    print(f"   Generating {total} questions (batch size {batch_size}, 10 concurrent)...")
-    done, written = 0, 0
+    written = 0
     batch: list[tuple[str, str, str]] = []
 
     with open(output_path, "w", encoding="utf-8") as f:
-        for chunk_id, text in chunk_list:
-            for _ in range(num_per_chunk):
-                constraint = random.choice(DIVERSITY_CONSTRAINTS)
-                batch.append((chunk_id, text, constraint))
-                if len(batch) >= batch_size:
-                    done, written = await process_batch(batch, done, written)
-                    batch = []
-        if batch:
-            done, written = await process_batch(batch, done, written)
+        with tqdm(total=total, desc="Generating", unit="q") as pbar:
+            for chunk_id, text in chunk_list:
+                for _ in range(num_per_chunk):
+                    constraint = random.choice(DIVERSITY_CONSTRAINTS)
+                    batch.append((chunk_id, text, constraint))
+                    if len(batch) >= batch_size:
+                        written = await process_batch(batch, pbar, written)
+                        batch = []
+            if batch:
+                written = await process_batch(batch, pbar, written)
 
     print(f"✅ Wrote {written} question–chunk pairs to {output_path}")
 

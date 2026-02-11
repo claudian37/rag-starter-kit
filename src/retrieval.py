@@ -7,6 +7,7 @@ of top results when no results meet threshold). Used by both app.py and
 benchmark.py to ensure benchmark results reflect production retrieval behavior.
 """
 
+import asyncio
 from typing import Any, List
 
 from openai import AsyncOpenAI, OpenAIError
@@ -63,17 +64,25 @@ async def retrieve_documents(
     """
     if fallback_limit is None:
         fallback_limit = RETRIEVAL_FALLBACK_LIMIT
+    if max_results < 0:
+        raise ValueError(f"max_results must be non-negative, got {max_results}")
+    if fallback_limit < 0:
+        raise ValueError(f"fallback_limit must be non-negative, got {fallback_limit}")
+    match_count_base = max(max_results, fallback_limit)
     query_embedding = await get_embedding(query, openai_client)
 
-    result = supabase.rpc(
-        "match_documents",
-        {
-            "query_embedding": query_embedding,
-            "match_count": max_results * 2,
-            "similarity_threshold": similarity_threshold,
-            "filter_source": None,
-        },
-    ).execute()
+    def _execute_rpc():
+        return supabase.rpc(
+            "match_documents",
+            {
+                "query_embedding": query_embedding,
+                "match_count": match_count_base * 2,
+                "similarity_threshold": similarity_threshold,
+                "filter_source": None,
+            },
+        ).execute()
+
+    result = await asyncio.to_thread(_execute_rpc)
 
     if not result.data:
         return []
