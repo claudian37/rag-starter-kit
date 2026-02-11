@@ -161,10 +161,6 @@ async def retrieve_relevant_documents(
             similarity_threshold=similarity_threshold,
             verbose=True,
         )
-        # If the shared retrieval layer swallows an error and returns None,
-        # treat this as a retrieval failure so it is handled by the UI error logic.
-        if docs is None:
-            raise RuntimeError("Document retrieval failed without raising an exception")
         if docs:
             print(f"   Retrieved {len(docs)} document(s) for the query")
         return docs
