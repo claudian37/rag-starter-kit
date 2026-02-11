@@ -16,6 +16,7 @@ import asyncio
 import json
 import os
 import random
+import re
 import sys
 from pathlib import Path
 
@@ -39,9 +40,19 @@ DIVERSITY_CONSTRAINTS = [
 ]
 
 
+def _extract_json_from_response(content: str) -> str:
+    """Extract JSON from LLM response, handling markdown code blocks."""
+    content = content.strip()
+    # Strip ```json or ``` code block wrappers
+    match = re.search(r"```(?:json)?\s*\n?([\s\S]*?)\n?```", content)
+    if match:
+        return match.group(1).strip()
+    return content
+
+
 async def generate_question_for_chunk(
     client: AsyncOpenAI,
-    chunk_text: str,
+    chunk_content: str,
     chunk_id: str,
     constraint: str,
 ) -> dict | None:
@@ -49,7 +60,7 @@ async def generate_question_for_chunk(
     prompt = f"""Generate a hypothetical question that can be answered using the following text chunk.
 
 Text chunk:
-{chunk_text[:2000]}
+{chunk_content[:2000]}
 
 Rules:
 - The question should be at most 2 sentences.
@@ -66,16 +77,12 @@ Respond with a JSON object: {{"question": "your question here"}}"""
             messages=[{"role": "user", "content": prompt}],
         )
         content = resp.choices[0].message.content.strip()
-        # Handle markdown code blocks
-        if content.startswith("```"):
-            content = content.split("```")[1]
-            if content.startswith("json"):
-                content = content[4:]
+        content = _extract_json_from_response(content)
         data = json.loads(content)
         return {
             "question": data["question"],
             "chunk_id": chunk_id,
-            "chunk": chunk_text[:500],  # Store truncated for reference
+            "chunk": chunk_content[:500],  # Store truncated for reference
         }
     except Exception as e:
         print(f"⚠️ Error generating question for chunk {chunk_id[:20]}...: {e}")

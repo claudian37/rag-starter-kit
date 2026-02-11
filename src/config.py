@@ -70,6 +70,9 @@ MINIMUM_SIMILARITY_THRESHOLD = float(os.getenv("MINIMUM_SIMILARITY_THRESHOLD", "
 # Maximum number of documents to retrieve per query
 MAX_SOURCES = int(os.getenv("MAX_SOURCES", "5"))
 
+# When no results meet similarity threshold, return this many anyway
+RETRIEVAL_FALLBACK_LIMIT = int(os.getenv("RETRIEVAL_FALLBACK_LIMIT", "2"))
+
 # ============================================================================
 # Summary Generation Configuration
 # ============================================================================

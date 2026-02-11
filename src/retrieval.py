@@ -11,7 +11,7 @@ from typing import Any, List
 
 from openai import AsyncOpenAI
 
-from config import EMBEDDING_MODEL
+from config import EMBEDDING_MODEL, RETRIEVAL_FALLBACK_LIMIT
 
 
 async def get_embedding(text: str, openai_client: AsyncOpenAI) -> List[float]:
@@ -29,7 +29,7 @@ async def retrieve_documents(
     query: str,
     max_results: int = 5,
     similarity_threshold: float = 0.3,
-    fallback_limit: int = 2,
+    fallback_limit: int | None = None,
     verbose: bool = True,
 ) -> List[dict]:
     """
@@ -51,6 +51,8 @@ async def retrieve_documents(
     Returns:
         List of relevant documents (with url, chunk_number, similarity, etc.)
     """
+    if fallback_limit is None:
+        fallback_limit = RETRIEVAL_FALLBACK_LIMIT
     query_embedding = await get_embedding(query, openai_client)
 
     result = supabase.rpc(

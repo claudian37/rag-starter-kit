@@ -159,7 +159,6 @@ async def retrieve_relevant_documents(
             query,
             max_results=max_results,
             similarity_threshold=similarity_threshold,
-            fallback_limit=2,
             verbose=True,
         )
         if docs:

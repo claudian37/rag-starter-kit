@@ -79,7 +79,6 @@ async def retrieve(
         question,
         max_results=top_k,
         similarity_threshold=similarity_threshold,
-        fallback_limit=2,
         verbose=False,
     )
     return [build_chunk_id(row) for row in docs]
@@ -202,6 +201,9 @@ def bootstrap_confidence_intervals(
 ) -> tuple[float, float, float]:
     """
     Resample with replacement, compute mean for each sample, return (mean, ci_low, ci_high).
+
+    When n < 2, bootstrap cannot produce meaningful intervals. Returns (mean, 0.0, 0.0)
+    for a single score, or (0.0, 0.0, 0.0) for empty input.
     """
     n = len(per_question_scores)
     if n < 2:
@@ -211,7 +213,7 @@ def bootstrap_confidence_intervals(
     for _ in range(n_samples):
         indices = random.choices(range(n), k=n)
         sample = [per_question_scores[i] for i in indices]
-        bootstrap_means.append(sum(sample) / n)
+        bootstrap_means.append(sum(sample) / len(sample))
 
     bootstrap_means.sort()
     alpha = 1 - ci
